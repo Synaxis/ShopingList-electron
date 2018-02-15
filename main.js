@@ -5,6 +5,7 @@ const path = require('path');
 const {app, BrowserWindow, Menu} = electron;
 
 let mainWindow;
+let addWindow;
 
 // Listen for app to be ready
 app.on('ready', function(){
@@ -16,6 +17,10 @@ app.on('ready', function(){
         protocol:'file:',
         slashe: true
     }));
+    //Quit when closed
+    mainWindow.on('closed', function(){
+        app.quit();
+    })
 
     // Build menu From template
     const mainMenu = Menu.buildFromTemplate(mainMenuTemplate);
@@ -23,13 +28,36 @@ app.on('ready', function(){
     Menu.setApplicationMenu(mainMenu);
 });
 
+// Handle createaddWindow
+function createAddWindow(){
+   // Create new window
+   addWindow = new BrowserWindow({
+    width: 300,
+    height: 200,
+    title:'Add Shopping List Item'
+   });
+   // Load html into window
+   addWindow.loadURL(url.format({      
+       pathname: path.join(__dirname, 'addWindow.html'),
+       protocol:'file:',
+       slashe: true
+   }));
+   // Garbage collection handle
+   addWindow.on('close', function(){
+       addWindow = null;
+   });
+}
+
 // create menu template
 const mainMenuTemplate = [
     {
         label:'File',
         submenu:[
             {
-                label: 'Add Item'
+                label: 'Add Item',
+                click(){
+                    createAddWindow();
+                }
             },
             {
                 label :'Clear Items'
@@ -45,3 +73,28 @@ const mainMenuTemplate = [
         ]
     }
 ];
+
+//if mac, add empty object to menu
+if(process.platform == 'darwin'){
+    mainMenuTemplate.unshift({});
+}
+
+// Add developer tools item if not in prod
+if(process.env.NODE_ENV !== 'production'){
+  mainMenuTemplate.push({
+      lable: 'Developer Tools',
+      submenu:[
+          {
+              label:'Toggle DevTools',
+              accelerator: process.platform == 'darwin' ? 'Command+I':
+                'Ctrl+I',
+              click(item, focusedWindow){
+                  focusedWindow.toggleDevTools();
+              }
+          },
+          {
+              role: 'reload'
+          }
+      ]
+  });
+}
